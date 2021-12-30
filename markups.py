@@ -18,16 +18,14 @@ exhangeMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnInfo, btnRate, bt
 btnWeatherInfo = KeyboardButton('Weather Info')
 btnCurrent = KeyboardButton('Current Weather')
 btnForecast = KeyboardButton('Weather Forecast')
-btnShareLocation = KeyboardButton('Locate me!', request_location=True)
-btnEnterLocation = KeyboardButton('Enter location')
 weatherMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnWeatherInfo, btnCurrent, btnForecast, btnMain)
 
 # ** Forecast MENU **
-forecastMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnEnterLocation, btnShareLocation, btnMain)
+forecastMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnMain)
 
 
 # ** Current Weather MENU **
-currentMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnShareLocation, btnEnterLocation, btnMain)
+currentWeatherMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnMain)
 
 # -- News -- 
 

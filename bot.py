@@ -1,13 +1,33 @@
-from aiogram import Dispatcher, Bot, types, executor
+from os import stat
+from aiogram import Dispatcher, Bot, dispatcher, types, executor
 from pprint import pprint
+from aiogram.dispatcher import storage
+from aiogram.dispatcher.storage import FSMContext
 from bs4 import BeautifulSoup
 import requests
 from config import *
 import markups as nav
+from weather import *
+from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.dispatcher import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 
+storage = MemoryStorage()
 bot = Bot(API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot,storage = storage)
+
+
+
+class States(StatesGroup):
+    weather = State()
+
+
+@dp.message_handler(lambda message: message.text == "Main menu", state = "*")
+async def back_to_menu(message: types.Message, state: FSMContext):
+    await state.finish()
+    await message.answer("Back to menu", reply_markup=nav.mainMenu)
+
 
 
 @dp.message_handler(commands=['start'])
@@ -33,17 +53,29 @@ async def weather_news(message: types.Message):
 
 @dp.message_handler(lambda message: message.text == "Current Weather")
 async def weather_news(message: types.Message):
-    await message.answer("Current Weather was chosen, which way you want to share your location? ", reply_markup=nav.currentMenu)
+    await States.weather.set()
+    await message.answer("Current Weather was chosen,\n Enter your location? ", reply_markup=nav.currentWeatherMenu)
+
 
 
 @dp.message_handler(lambda message: message.text == "Weather Forecast")
 async def weather_news(message: types.Message):
-    await message.answer("Weather Broadcast was chosen, which way you want to share your location?", reply_markup=nav.forecastMenu)
+    await message.answer("Weather Broadcast was chosen,\n Enter your location?", reply_markup=nav.forecastMenu)
+   
+
+@dp.message_handler(state=States.weather)
+async def get_location(message: types.Message, state:FSMContext):
+    await States.weather.set()
+    async with state.proxy() as data:
+        data['weather'] = message.text
+    value = current_weather(data["weather"])
+    if value != "Ooops. Wrong city name. Try again":
+        await message.answer(current_weather(data["weather"]), reply_markup=nav.weatherMenu)
+        await state.finish()
+    
 
 
-
-
-@dp.message_handler(lambda message: message.text == "Latest News")
+@dp.message_handler(lambda message: message.text == "Recent News")
 async def latest_news(message: types.Message):
     URL = 'https://www.unian.ua/'
     HEADERS = {
@@ -62,11 +94,6 @@ async def latest_news(message: types.Message):
 @dp.message_handler(lambda message: message.text == "Exchange Rates")
 async def exchange_rates(message: types.Message):
     await message.answer("Exchange Rates was chosen", reply_markup=nav.exhangeMenu)
-
-
-@dp.message_handler(lambda message: message.text == "Main menu")
-async def back_to_menu(message: types.Message):
-    await message.answer("Back to menu", reply_markup=nav.mainMenu)
 
 
 
