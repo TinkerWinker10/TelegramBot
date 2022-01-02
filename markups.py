@@ -10,9 +10,10 @@ btnNews = KeyboardButton('Recent News')
 mainMenu  = ReplyKeyboardMarkup(resize_keyboard=True).add(btnExchange, btnWeather, btnNews)
 
 # -- Exchange --
-btnInfo = KeyboardButton('Info')
-btnRate = KeyboardButton('Exchange')
+btnInfo = KeyboardButton('Currency Rate')
+btnRate = KeyboardButton('Exchange Ammount')
 exhangeMenu = ReplyKeyboardMarkup(resize_keyboard=True).add(btnInfo, btnRate, btnMain)
+
 
 # -- Weather --
 btnWeatherInfo = KeyboardButton('Weather Info')

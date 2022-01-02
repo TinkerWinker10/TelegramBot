@@ -15,8 +15,10 @@ def current_weather(q: str =  "Chicago", appid: str = APPID, units: str = "metri
 
 def weather_forecast(q: str = "Chicago", appid: str = APPID, units: str = "metric", cnt: str = "8") ->dict:#прогноз погоды
         data = requests.get(URL_WEATHER+"forecast", params=locals()).json()
-        for item in data["list"]:
-            value = data["list"]
-        return "\n".join(list(map(str, value)))
+        if data["cod"]=="404":
+            return f'Ooops. Wrong city name. Try again'
+        value = data["list"]
+        return "\n".join(list(map(str,[f'Time: {item["dt_txt"]} Temperature:{int(item["main"]["temp"])}' for item in value])))
+
 
 

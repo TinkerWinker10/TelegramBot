@@ -1,11 +1,10 @@
-from os import stat
-from aiogram import Dispatcher, Bot, dispatcher, types, executor
-from pprint import pprint
+from aiogram import Dispatcher, Bot, types, executor
 from aiogram.dispatcher import storage
 from aiogram.dispatcher.storage import FSMContext
 from bs4 import BeautifulSoup
 import requests
 from config import *
+from exchange import *
 import markups as nav
 from weather import *
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -20,14 +19,20 @@ dp = Dispatcher(bot,storage = storage)
 
 
 class States(StatesGroup):
-    weather = State()
+    CurrentWeather = State()
+    ForecastWeather = State()
+    
 
+class ExchangeState(StatesGroup):
+    ExchangeInfo = State()
+    ExchangeBase = State()
+    ExchangeAdd = State()
+    ExchangeAmm = State()
 
 @dp.message_handler(lambda message: message.text == "Main menu", state = "*")
 async def back_to_menu(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer("Back to menu", reply_markup=nav.mainMenu)
-
 
 
 @dp.message_handler(commands=['start'])
@@ -53,26 +58,97 @@ async def weather_news(message: types.Message):
 
 @dp.message_handler(lambda message: message.text == "Current Weather")
 async def weather_news(message: types.Message):
-    await States.weather.set()
-    await message.answer("Current Weather was chosen,\n Enter your location? ", reply_markup=nav.currentWeatherMenu)
+    await States.CurrentWeather.set()
+    await message.answer("Current Weather was chosen,\n Enter your location:", reply_markup=nav.currentWeatherMenu)
 
 
 
 @dp.message_handler(lambda message: message.text == "Weather Forecast")
 async def weather_news(message: types.Message):
-    await message.answer("Weather Broadcast was chosen,\n Enter your location?", reply_markup=nav.forecastMenu)
+    await States.ForecastWeather.set()
+    await message.answer("Weather Broadcast was chosen,\n Enter your location:", reply_markup=nav.forecastMenu)
+
+
+@dp.message_handler(state=States.ForecastWeather)
+async def get_location(message: types.Message, state:FSMContext):
+    await States.ForecastWeather.set()
+    async with state.proxy() as data:
+        data['weather'] = message.text
+    value = weather_forecast(data["weather"])
+    if value != "Ooops. Wrong city name. Try again":
+        await message.answer(weather_forecast(data["weather"]), reply_markup=nav.weatherMenu)
+        await state.finish()
    
 
-@dp.message_handler(state=States.weather)
+@dp.message_handler(state=States.CurrentWeather)
 async def get_location(message: types.Message, state:FSMContext):
-    await States.weather.set()
+    await States.CurrentWeather.set()
     async with state.proxy() as data:
         data['weather'] = message.text
     value = current_weather(data["weather"])
     if value != "Ooops. Wrong city name. Try again":
         await message.answer(current_weather(data["weather"]), reply_markup=nav.weatherMenu)
         await state.finish()
+
+
+@dp.message_handler(lambda message: message.text == "Exchange Rates")
+async def exchange_rates(message: types.Message):
+    await message.answer("Exchange Rates was chosen", reply_markup=nav.exhangeMenu)
+
+
+#Exchange Ammount
     
+@dp.message_handler(lambda message: message.text == "Exchange Ammount")
+async def weather_news(message: types.Message):
+    await ExchangeState.ExchangeBase.set()
+    await message.answer("Exchange Ammount was chosen,\nEnter base currency", reply_markup=nav.forecastMenu)
+
+@dp.message_handler(state=ExchangeState.ExchangeBase)
+async def get_currency(message: types.Message, state:FSMContext):
+    await ExchangeState.ExchangeBase.set()
+    if message.text not in get_data("message.text")["rates"]:
+        await message.answer("Wrong base")
+    else:
+        async with state.proxy() as data: 
+            data["base"] = message.text
+        await ExchangeState.next()
+        await message.answer("Enter second currency")
+
+@dp.message_handler(state=ExchangeState.ExchangeAdd)
+async def get_currency(message: types.Message, state:FSMContext):
+    if message.text not in get_data("message.text")["rates"]:
+        await message.answer("Wrong base")
+    else:
+        async with state.proxy() as data: 
+            data["second"] = message.text
+        await ExchangeState.next()
+        await message.answer("Enter ammount of base currency")
+
+
+@dp.message_handler(state=ExchangeState.ExchangeAmm)
+async def get_currency(message: types.Message, state:FSMContext):
+    if message.text.isdigit(): 
+        async with state.proxy() as data: 
+            data["ammount"] = message.text
+        await message.answer(get_currency_by_ammount(data["base"], data["second"], data["ammount"]), reply_markup=nav.exhangeMenu)
+        await state.finish()
+    else: 
+        await message.answer("Ammount must be a decimal")
+
+
+ 
+@dp.message_handler(lambda message: message.text == "Currency Rate")
+async def weather_news(message: types.Message):
+    await ExchangeState.ExchangeInfo.set()
+    await message.answer("Currency Rates was chosen,\nEnter name of currency", reply_markup=nav.forecastMenu)
+
+@dp.message_handler(state=ExchangeState.ExchangeInfo)
+async def get_currency(message: types.Message, state:FSMContext):
+    await ExchangeState.ExchangeInfo.set()
+    async with state.proxy() as data: 
+        data["base"] = message.text
+    await message.answer(get_rates(data["base"]), reply_markup=nav.exhangeMenu)
+    await state.finish()
 
 
 @dp.message_handler(lambda message: message.text == "Recent News")
@@ -89,11 +165,6 @@ async def latest_news(message: types.Message):
     for i in range(0, len(texts[:-20])):
         txt = str(i + 1) + ') ' + texts[i].text
         await bot.send_message(message.chat.id, '<a href="{}">{}</a>'.format(texts[i]['href'], txt), parse_mode='html')
-
-
-@dp.message_handler(lambda message: message.text == "Exchange Rates")
-async def exchange_rates(message: types.Message):
-    await message.answer("Exchange Rates was chosen", reply_markup=nav.exhangeMenu)
 
 
 
