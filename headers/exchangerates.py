@@ -6,7 +6,7 @@ from states import ExchangeState
 from exchange import get_rates
 
 
-@dp.message_handler(lambda message: message.text == "💸Currency Rate💸")
+@dp.message_handler(lambda message: message.text == nav.btnCurrencyRate)
 async def weather_news(message: types.Message):
     await ExchangeState.ExchangeInfo.set()
     await message.answer("Currency Rates was chosen,\nEnter name of currency", reply_markup=nav.forecastMenu)

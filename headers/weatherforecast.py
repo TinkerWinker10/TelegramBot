@@ -6,7 +6,7 @@ from states import States
 from weather import weather_forecast
 
 
-@dp.message_handler(lambda message: message.text == '🌪Weather Forecast🌪')
+@dp.message_handler(lambda message: message.text == nav.btnForecast)
 async def weather_news(message: types.Message):
     await States.ForecastWeather.set()
     await message.answer("Weather Broadcast was chosen,\n Enter your location:", reply_markup=nav.forecastMenu)
